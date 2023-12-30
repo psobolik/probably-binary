@@ -14,16 +14,21 @@ pub enum FileType {
 #[derive(Debug, PartialEq)]
 pub enum EntryType {
     Directory,
+    Symlink,
     File(FileType),
 }
+
 pub fn entry_type(path: &Path) -> Result<EntryType, PBError> {
-    let metadata = match path.metadata() {
-        Ok(metadata) => metadata,
-        Err(error) => return Err(PBError::new(error.to_string())),
-    };
-    if metadata.is_dir() {
+    
+    if path.is_symlink() {
+        Ok(EntryType::Symlink)
+    } else if path.is_dir() {
         Ok(EntryType::Directory)
     } else {
+        let metadata = match path.metadata() {
+            Ok(metadata) => metadata,
+            Err(error) => return Err(PBError::new(error.to_string())),
+        };
         Ok(guess_type(path, metadata.len())?)
     }
 }

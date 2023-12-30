@@ -2,4 +2,5 @@
 
 Copyright (c) 2023 Paul Sobolik
 
-A rust crate that identifies a file path as a directory, binary file or text file using a very simple heuristic.
+A rust crate that identifies a file path as a symlink, directory, binary file 
+or text file. Uses a very simple heuristic to distinguish binary from text.
