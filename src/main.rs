@@ -8,7 +8,8 @@ use std::env;
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
-        panic!("specify a file on the command line")
+        eprintln!("specify a file on the command line");
+        return;
     }
     let path = std::path::Path::new(&args[1]);
     match entry_type(path) {
@@ -19,7 +20,10 @@ fn main() {
             EntryType::File(file_type) => match file_type {
                 FileType::Text => println!("{path:?} is probably text"),
                 FileType::Binary => println!("{path:?} is probably binary"),
-            },
+            }
+            EntryType::Other => {
+                println!("{path:?} is probably not a file or a directory")
+            }
         },
         Err(error) => {
             dbg!(error);

@@ -15,7 +15,9 @@ pub enum FileType {
 pub enum EntryType {
     Directory,
     File(FileType),
+    Other,
 }
+
 pub fn entry_type(path: &Path) -> Result<EntryType, PBError> {
     let metadata = match path.metadata() {
         Ok(metadata) => metadata,
@@ -23,8 +25,10 @@ pub fn entry_type(path: &Path) -> Result<EntryType, PBError> {
     };
     if metadata.is_dir() {
         Ok(EntryType::Directory)
+    } else if metadata.is_file() {
+        Ok(EntryType::File(guess_file_type(path, metadata.len())?))
     } else {
-        Ok(guess_type(path, metadata.len())?)
+        Ok(EntryType::Other)
     }
 }
 
@@ -32,7 +36,7 @@ pub const fn is_probably_binary(c: &u8) -> bool {
     matches!(c, b'\0'..=b'\x07' | b'\x0e'..=b'\x1f' | b'\x7F')
 }
 
-pub fn guess_type(path: &Path, len: u64) -> Result<EntryType, PBError> {
+pub fn guess_file_type(path: &Path, len: u64) -> Result<FileType, PBError> {
     let mut f = match File::open(path) {
         Ok(f) => f,
         Err(error) => return Err(PBError::new(error.to_string())),
@@ -51,11 +55,11 @@ pub fn guess_type(path: &Path, len: u64) -> Result<EntryType, PBError> {
     };
     // If the first part looks to be binary, assume it is
     if file_type == FileType::Binary {
-        return Ok(EntryType::File(FileType::Binary));
+        return Ok(FileType::Binary);
     }
     // If we've checked the entire file, assume we know what it is
     if len <= 256 {
-        return Ok(EntryType::File(FileType::Text));
+        return Ok(FileType::Text);
     }
 
     // If the first 256 bytes look like text, check the last 256 bytes as well
@@ -67,9 +71,9 @@ pub fn guess_type(path: &Path, len: u64) -> Result<EntryType, PBError> {
         Err(error) => return Err(PBError::new(error.to_string())),
     };
     if bucket.iter().take(i).any(is_probably_binary) {
-        Ok(EntryType::File(FileType::Binary))
+        Ok(FileType::Binary)
     } else {
-        Ok(EntryType::File(FileType::Text))
+        Ok(FileType::Text)
     }
 }
 
