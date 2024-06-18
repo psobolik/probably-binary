@@ -1,3 +1,19 @@
+//! # probably_binary
+//!
+//! Identifies a path as a directory, text file, or other.
+//!
+//! Text files are further identified as binary or text using a very simple heuristic.
+//!
+//! ### Example
+//! ```rust,no_run
+//! use std::path::Path;
+//! use probably_binary::{EntryType, FileType};
+//!
+//! let path = Path::new(".");
+//! let entry_type = probably_binary::entry_type(path);
+//! assert_eq!(entry_type.unwrap(), EntryType::Directory);
+//! ```
+
 mod pb_error;
 
 use pb_error::PBError;
@@ -32,11 +48,11 @@ pub fn entry_type(path: &Path) -> Result<EntryType, PBError> {
     }
 }
 
-pub const fn is_probably_binary(c: &u8) -> bool {
+const fn is_probably_binary(c: &u8) -> bool {
     matches!(c, b'\0'..=b'\x07' | b'\x0e'..=b'\x1f' | b'\x7F')
 }
 
-pub fn guess_file_type(path: &Path, len: u64) -> Result<FileType, PBError> {
+fn guess_file_type(path: &Path, len: u64) -> Result<FileType, PBError> {
     let mut f = match File::open(path) {
         Ok(f) => f,
         Err(error) => return Err(PBError::new(error.to_string())),
